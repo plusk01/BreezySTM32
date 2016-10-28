@@ -19,7 +19,7 @@
    along with BreezySTM32.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <breezystm32.h>
+#include <breezystm32f1.h>
 
 static uartPort_t uartPort1;
 static uartPort_t uartPort2;

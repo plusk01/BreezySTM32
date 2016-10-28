@@ -20,7 +20,7 @@
  */
 
 
-#include <breezystm32.h>
+#include <breezystm32f1.h>
 
 #include <math.h>
 

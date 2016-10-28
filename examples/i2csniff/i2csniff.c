@@ -23,22 +23,42 @@
    along with BreezySTM32.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <breezystm32.h>
+#include <breezystm32f1.h>
 
+
+bool i2c1_avail = false;
+bool i2c2_avail = false;
 void setup(void)
 {
-    i2cInit(I2CDEV_2);
+    i2c1_avail = i2cInit(I2CDEV_1);
+    i2c2_avail = i2cInit(I2CDEV_2);
 } 
 
 void loop(void)
 {
     uint8_t addr;
 
+    printf("I2C1: %s, ----- I2C2: %s, ---\n", (i2c1_avail)? "on": "off", (i2c2_avail)?"on":"off" );
     for (addr=0; addr<128; ++addr)
-        if (i2cWrite(addr, 0x00, 0x00))
-            printf("Found device at address 0X%02X\n", addr);
+    {
+        if(i2c1_avail)
+        {
+            if (i2cWrite(I2CDEV_1, addr, 0xFF, 0x00))
+            {
+                printf("I2C1 Found device at address 0X%02X\n", addr);
+            }
+        }
 
-    printf("--------------------------\n");
+        if(i2c2_avail)
+        {
+            if (i2cWrite(I2CDEV_2, addr, 0xFF, 0x00))
+            {
+                printf("I2C2 Found device at address 0X%02X\n", addr);
+            }
+        }
+    }
+
+    printf("--------------------------\n\n");
 
     delay(1000);
 }

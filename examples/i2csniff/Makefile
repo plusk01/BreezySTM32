@@ -22,7 +22,7 @@ TARGET		?= myproject
 OPTIONS		?=
 
 # Debugger optons, must be empty or GDB
-DEBUG ?=
+DEBUG ?= GDB
 
 # Serial port/Device for flashing
 SERIAL_DEVICE	?= /dev/ttyUSB0

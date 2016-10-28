@@ -24,7 +24,7 @@
 typedef enum I2CDevice {
     I2CDEV_1,
     I2CDEV_2,
-    I2CDEV_MAX = I2CDEV_2
+    I2CDEV_3
 } I2CDevice;
 
 typedef enum {
@@ -46,20 +46,20 @@ typedef struct i2cJob{
     uint8_t reg;
     uint8_t* data;
     uint8_t length;
-    struct i2cJob* next_job;
+    uint8_t index;
     volatile uint8_t* status;
     void (*CB)(void);
 } i2cJob_t;
 
 #define I2C_BUFFER_SIZE 64
 
-void i2cInit(I2CDevice index);
-uint16_t i2cGetErrorCounter(void);
+bool i2cInit(uint8_t index);
+uint16_t i2cGetErrorCounter(uint8_t index);
 
 // Blocking I2C functions (returns value success or failure)
-bool i2cWriteBuffer(uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data);
-bool i2cWrite(uint8_t addr_, uint8_t reg, uint8_t data);
-bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t *buf);
+bool i2cWriteBuffer(uint8_t index, uint8_t addr_, uint8_t reg_, uint8_t len_, uint8_t *data);
+bool i2cWrite(uint8_t index, uint8_t addr_, uint8_t reg, uint8_t data);
+bool i2cRead(uint8_t index, uint8_t addr_, uint8_t reg, uint8_t len, uint8_t *buf);
 
 // ===================================================================
 // Asynchronous I2C handler
@@ -74,4 +74,4 @@ bool i2cRead(uint8_t addr_, uint8_t reg, uint8_t len, uint8_t *buf);
 //
 // For an example of how to use, check out mpu6050_request_read_temp - the non-blocking way to read
 // the accelerometer
-void i2c_queue_job(i2cJobType_t type, uint8_t addr_, uint8_t reg_, uint8_t *data, uint8_t length, volatile uint8_t *status_, void (*CB)(void));
+void i2c_queue_job(uint8_t index, i2cJobType_t type, uint8_t addr_, uint8_t reg_, uint8_t *data, uint8_t length, volatile uint8_t *status_, void (*CB)(void));

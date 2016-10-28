@@ -19,7 +19,7 @@
    along with BreezySTM32.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <breezystm32.h>
+#include <breezystm32f1.h>
 
 // driver for spektrum satellite receiver / sbus using UART2 (freeing up more motor outputs for stuff)
 

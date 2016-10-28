@@ -1,7 +1,7 @@
 /*
 breezystm32.h : general header for BreezySTM32 library
 
-Copyright (C) 2016 Simon D. Levy 
+Copyright (C) 2016 James S. Jackson
 
 This file is part of BreezySTM32.
 
@@ -25,30 +25,8 @@ along with BreezySTM32.  If not, see <http://www.gnu.org/licenses/>.
 #include <stdlib.h>
 #include <stdint.h>
 
-#include "stm32f10x_conf.h"
+#include "stm32f4xx_conf.h"
 
-#include "drv_adc.h"
 #include "drv_i2c.h"
-#include "drv_serial.h"
-#include "drv_gpio.h"
-#include "drv_system.h"
-#include "drv_pwm.h"
-#include "drv_uart.h"
-#include "drv_mpu6050.h"
-#include "drv_ms5611.h"
-#include "drv_mb1242.h"
-#include "drv_spi.h"
-#include "drv_gpio.h"
-#include "drv_m25p16.h"
-#include "drv_flashfs.h"
-#include "drv_ms4525.h"
-#include "drv_hmc5883l.h"
-#include "drv_spektrum.h"
-#include "printf.h"
 
-
-extern serialPort_t * Serial1;
-
-void setup(void);
-
-void loop(void);
+#define I2CDEV_MAX I2CDEV_3

@@ -21,7 +21,7 @@
 
 extern "C" { // allows us to compile C++ with arm-none-eabi-gcc
 
-#include <breezystm32.h>
+#include <breezystm32f1.h>
 
 class Blinker {
 

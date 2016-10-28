@@ -18,7 +18,7 @@
  */
 
 
-#include <breezystm32.h>
+#include <breezystm32f1.h>
 
 // MS4525 address 0x28 for most common version
 #define MS4525_ADDR   0x28
