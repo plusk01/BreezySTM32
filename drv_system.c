@@ -139,12 +139,7 @@ void failureMode(uint8_t mode)
 {
     LED1_OFF;
     LED0_ON;
-    while (1) {
-        LED1_TOGGLE;
-        LED0_TOGGLE;
-        delay(475 * mode - 2);
-        delay(25);
-    }
+    systemReset(false);
 }
 
 uint32_t rccReadBkpDr(void)
