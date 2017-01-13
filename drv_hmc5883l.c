@@ -98,9 +98,9 @@
 #define HMC_NEG_BIAS 2
 
 typedef enum {
-    X = 0,
-    Y,
-    Z
+  X = 0,
+  Y,
+  Z
 } sensor_axis_e;
 
 static float magGain[3] = { 1.0f, 1.0f, 1.0f };
@@ -122,104 +122,112 @@ static float magGain[3] = { 1.0f, 1.0f, 1.0f };
 
 bool hmc5883lInit(int boardVersion)
 {
-    gpio_config_t gpio;
-    int16_t magADC[3];
-    int i;
-    int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
-    bool bret = true;           // Error indicator
+  gpio_config_t gpio;
+  int16_t magADC[3];
+  int i;
+  int32_t xyz_total[3] = { 0, 0, 0 }; // 32 bit totals so they won't overflow.
+  bool bret = true;           // Error indicator
 
-    gpio.speed = Speed_2MHz;
-    gpio.mode = Mode_IN_FLOATING;
-    if (boardVersion > 4) {
-        // PB12 - MAG_DRDY output on rev4 hardware
-        gpio.pin = Pin_12;
-        gpioInit(GPIOB, &gpio);
-    } else {
-        // PC14 - MAG_DRDY output on rev5 hardware
-        gpio.pin = Pin_14;
-        gpioInit(GPIOC, &gpio);
-    }
+  gpio.speed = Speed_2MHz;
+  gpio.mode = Mode_IN_FLOATING;
+  if (boardVersion > 4) {
+    // PB12 - MAG_DRDY output on rev4 hardware
+    gpio.pin = Pin_12;
+    gpioInit(GPIOB, &gpio);
+  } else {
+    // PC14 - MAG_DRDY output on rev5 hardware
+    gpio.pin = Pin_14;
+    gpioInit(GPIOC, &gpio);
+  }
 
+  delay(50);
+  i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
+  // Note that the  very first measurement after a gain change maintains the same gain as the previous setting.
+  // The new gain setting is effective from the second measurement and on.
+  i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
+  delay(100);
+  hmc5883l_read(magADC);
+
+  for (i = 0; i < 10; i++) {  // Collect 10 samples
+    i2cWrite(MAG_ADDRESS, HMC58X3_R_MODE, 1);
     delay(50);
-    i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_POS_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to pos bias
-    // Note that the  very first measurement after a gain change maintains the same gain as the previous setting.
-    // The new gain setting is effective from the second measurement and on.
-    i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFB, 0x60); // Set the Gain to 2.5Ga (7:5->011)
-    delay(100);
-    hmc5883lRead(magADC);
+    hmc5883l_read(magADC);       // Get the raw values in case the scales have already been changed.
 
-    for (i = 0; i < 10; i++) {  // Collect 10 samples
-        i2cWrite(MAG_ADDRESS, HMC58X3_R_MODE, 1);
-        delay(50);
-        hmc5883lRead(magADC);       // Get the raw values in case the scales have already been changed.
+    // Since the measurements are noisy, they should be averaged rather than taking the max.
+    xyz_total[X] += magADC[X];
+    xyz_total[Y] += magADC[Y];
+    xyz_total[Z] += magADC[Z];
 
-        // Since the measurements are noisy, they should be averaged rather than taking the max.
-        xyz_total[X] += magADC[X];
-        xyz_total[Y] += magADC[Y];
-        xyz_total[Z] += magADC[Z];
-
-        // Detect saturation.
-        if (-4096 >= magADC[X] || -4096 >= magADC[Y] || -4096 >= magADC[Z]) {
-            bret = false;
-            break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
-        }
+    // Detect saturation.
+    if (-4096 >= magADC[X] || -4096 >= magADC[Y] || -4096 >= magADC[Z]) {
+      bret = false;
+      break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
     }
+  }
 
-    // Apply the negative bias. (Same gain)
-    i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
-    for (i = 0; i < 10; i++) {
-        i2cWrite(MAG_ADDRESS, HMC58X3_R_MODE, 1);
-        delay(50);
-        hmc5883lRead(magADC);               // Get the raw values in case the scales have already been changed.
+  // Apply the negative bias. (Same gain)
+  i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFA, 0x010 + HMC_NEG_BIAS);   // Reg A DOR = 0x010 + MS1, MS0 set to negative bias.
+  for (i = 0; i < 10; i++) {
+    i2cWrite(MAG_ADDRESS, HMC58X3_R_MODE, 1);
+    delay(50);
+    hmc5883l_read(magADC);               // Get the raw values in case the scales have already been changed.
 
-        // Since the measurements are noisy, they should be averaged.
-        xyz_total[X] -= magADC[X];
-        xyz_total[Y] -= magADC[Y];
-        xyz_total[Z] -= magADC[Z];
+    // Since the measurements are noisy, they should be averaged.
+    xyz_total[X] -= magADC[X];
+    xyz_total[Y] -= magADC[Y];
+    xyz_total[Z] -= magADC[Z];
 
-        // Detect saturation.
-        if (-4096 >= magADC[X] || -4096 >= magADC[Y] || -4096 >= magADC[Z]) {
-            bret = false;
-            break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
-        }
+    // Detect saturation.
+    if (-4096 >= magADC[X] || -4096 >= magADC[Y] || -4096 >= magADC[Z]) {
+      bret = false;
+      break;              // Breaks out of the for loop.  No sense in continuing if we saturated.
     }
+  }
 
-    magGain[X] = fabsf(660.0f * HMC58X3_X_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[X]);
-    magGain[Y] = fabsf(660.0f * HMC58X3_Y_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Y]);
-    magGain[Z] = fabsf(660.0f * HMC58X3_Z_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Z]);
+  magGain[X] = fabsf(660.0f * HMC58X3_X_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[X]);
+  magGain[Y] = fabsf(660.0f * HMC58X3_Y_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Y]);
+  magGain[Z] = fabsf(660.0f * HMC58X3_Z_SELF_TEST_GAUSS * 2.0f * 10.0f / xyz_total[Z]);
 
-    // leave test mode
-    i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
-    i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFB, 0x20);   // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
-    i2cWrite(MAG_ADDRESS, HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
-    delay(100);
+  // leave test mode
+  i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFA, 0x70);   // Configuration Register A  -- 0 11 100 00  num samples: 8 ; output rate: 15Hz ; normal measurement mode
+  i2cWrite(MAG_ADDRESS, HMC58X3_R_CONFB, 0x20);   // Configuration Register B  -- 001 00000    configuration gain 1.3Ga
+  i2cWrite(MAG_ADDRESS, HMC58X3_R_MODE, 0x00);    // Mode register             -- 000000 00    continuous Conversion Mode
+  delay(100);
 
-    if (!bret) {                // Something went wrong so get a best guess
-        magGain[X] = 1.0f;
-        magGain[Y] = 1.0f;
-        magGain[Z] = 1.0f;
-    }
+  if (!bret) {                // Something went wrong so get a best guess
+    magGain[X] = 1.0f;
+    magGain[Y] = 1.0f;
+    magGain[Z] = 1.0f;
+  }
 
-    bool ack = false;
-    uint8_t sig = 0;
+  bool ack = false;
+  uint8_t sig = 0;
 
-    ack = i2cRead(MAG_ADDRESS, 0x0A, 1, &sig);
-    if (!ack || sig != 'H')
-        return false;
+  ack = i2cRead(MAG_ADDRESS, 0x0A, 1, &sig);
+  if (!ack || sig != 'H')
+    return false;
 
-    return true;
+  return true;
 }
 
-void hmc5883lRead(int16_t *magData)
+uint8_t buf[6];
+void hmc5883l_update()
 {
-    uint8_t buf[6];
-    
+  static uint32_t last_update = 0;
+  if(last_update + 13 > millis())
+  {
     i2cRead(MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
-    // During calibration, magGain is 1.0, so the read returns normal non-calibrated values.
-    // After calibration is done, magGain is set to calculated gain values.
-    magData[X] = (int16_t)(buf[0] << 8 | buf[1]) * magGain[X];
-    magData[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magGain[Z];
-    magData[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magGain[Y];
+  }
+
+}
+
+void hmc5883l_read(int16_t *magData)
+{
+  // During calibration, magGain is 1.0, so the read returns normal non-calibrated values.
+  // After calibration is done, magGain is set to calculated gain values.
+  magData[X] = (int16_t)(buf[0] << 8 | buf[1]) * magGain[X];
+  magData[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magGain[Z];
+  magData[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magGain[Y];
 }
 
 
@@ -232,9 +240,9 @@ static volatile uint8_t status;
 
 void mag_read_CB(void)
 {
-    mag_data[X] = (mag_buffer[0] << 8 | mag_buffer[1]);
-    mag_data[Z] = (mag_buffer[2] << 8 | mag_buffer[3]);
-    mag_data[Y] = (mag_buffer[4] << 8 | mag_buffer[5]);
+  mag_data[X] = (mag_buffer[0] << 8 | mag_buffer[1]);
+  mag_data[Z] = (mag_buffer[2] << 8 | mag_buffer[3]);
+  mag_data[Y] = (mag_buffer[4] << 8 | mag_buffer[5]);
 }
 
 void hmc5883l_request_async_update()
