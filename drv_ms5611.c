@@ -229,6 +229,7 @@ void ms5611_update(void)
         baro.start_up();
         state = 1;
         baroDeadline += baro.up_delay;
+        baro.calculate(&baroPressure, &baroTemperature);
     }
 }
 

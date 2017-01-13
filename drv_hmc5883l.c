@@ -214,8 +214,10 @@ uint8_t buf[6];
 void hmc5883l_update()
 {
   static uint32_t last_update = 0;
-  if(last_update + 13 > millis())
+  uint32_t now = millis();
+  if(last_update + 13 < now)
   {
+    last_update = now;
     i2cRead(MAG_ADDRESS, MAG_DATA_REGISTER, 6, buf);
   }
 
@@ -225,9 +227,9 @@ void hmc5883l_read(int16_t *magData)
 {
   // During calibration, magGain is 1.0, so the read returns normal non-calibrated values.
   // After calibration is done, magGain is set to calculated gain values.
-  magData[X] = (int16_t)(buf[0] << 8 | buf[1]) * magGain[X];
-  magData[Z] = (int16_t)(buf[2] << 8 | buf[3]) * magGain[Z];
-  magData[Y] = (int16_t)(buf[4] << 8 | buf[5]) * magGain[Y];
+  magData[X] = (int16_t)(buf[0] << 8 | buf[1]);
+  magData[Y] = (int16_t)(buf[2] << 8 | buf[3]);
+  magData[Z] = (int16_t)(buf[4] << 8 | buf[5]);
 }
 
 
