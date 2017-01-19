@@ -384,7 +384,8 @@ void i2c_ev_handler(void)
       }
     }
     // we must wait for the start to clear, otherwise we get constant BTF
-    while (I2Cx->CR1 & 0x0100) {
+    uint32_t timeout = I2C_DEFAULT_TIMEOUT;
+    while (I2Cx->CR1 & 0x0100 && --timeout > 0) {
       ;
     }
 
@@ -479,6 +480,10 @@ static void i2cUnstick(void)
   gpio_config_t cfg;
   uint16_t scl, sda;
   int i;
+
+  // disable any I2C interrupts
+  I2C_ITConfig(I2Cx, I2C_IT_EVT | I2C_IT_ERR, DISABLE);
+
 
   // prepare pins
   gpio = i2cHardwareMap[I2Cx_index].gpio;
