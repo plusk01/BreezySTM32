@@ -283,11 +283,13 @@ static void i2c_er_handler(void)
     I2C_ITConfig(I2Cx, I2C_IT_BUF, DISABLE);                        // disable the RXNE/TXE interrupt - prevent the ISR tailchaining onto the ER (hopefully)
     if (!(SR1Register & 0x0200) && !(I2Cx->CR1 & 0x0200)) {         // if we dont have an ARLO error, ensure sending of a stop
       if (I2Cx->CR1 & 0x0100) {                                   // We are currently trying to send a start, this is very bad as start, stop will hang the peripheral
-        while (I2Cx->CR1 & 0x0100) {
+        uint32_t timeout = I2C_DEFAULT_TIMEOUT;
+        while (I2Cx->CR1 & 0x0100 && --timeout > 0) {
           ;    // wait for any start to finish sending
         }
         I2C_GenerateSTOP(I2Cx, ENABLE);                         // send stop to finalise bus transaction
-        while (I2Cx->CR1 & 0x0200) {
+        timeout = I2C_DEFAULT_TIMEOUT;
+        while (I2Cx->CR1 & 0x0200 && --timeout > 0) {
           ;    // wait for stop to finish sending
         }
         i2cInit(I2Cx_index);                                    // reset and configure the hardware
