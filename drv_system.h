@@ -66,7 +66,7 @@
 #endif
 
 void systemInit(void);
-void delayMicroseconds(uint64_t us);
+void delayMicroseconds(uint32_t us);
 void delay(uint32_t ms);
 
 uint64_t micros(void);
