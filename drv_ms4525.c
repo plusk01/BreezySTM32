@@ -113,11 +113,11 @@ int16_t ms4525_read_temperature(void)
 
 void ms4525_request_async_update(void)
 {
-  static uint32_t next_update_us = 0;
-  uint32_t now_us = micros();
+  static uint64_t next_update_us = 0;
+  uint64_t now_us = micros();
 
   // if it's not time to do anything, just return
-  if((int32_t)(now_us - next_update_us) < 0)
+  if((int64_t)(now_us - next_update_us) < 0)
   {
     return;
   }

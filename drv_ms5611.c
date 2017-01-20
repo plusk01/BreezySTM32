@@ -208,12 +208,12 @@ bool ms5611_init(void)
 
 void ms5611_update(void)
 {
-    static uint32_t baroDeadline = 0;
+    static uint64_t baroDeadline = 0;
     static int state = 0;
 
-    uint32_t currentTime = micros();
+    uint64_t currentTime = micros();
 
-    if ((int32_t)(currentTime - baroDeadline) < 0)
+    if ((int64_t)(currentTime - baroDeadline) < 0)
         return;
 
     baroDeadline = currentTime;
@@ -249,7 +249,7 @@ static volatile uint8_t temp_read_status = 0;
 static volatile uint8_t pressure_read_status = 0;
 static volatile uint8_t pressure_start_status = 0;
 static uint8_t baro_state = 0;
-static volatile uint32_t next_update_us = 0;
+static volatile uint64_t next_update_us = 0;
 
 void temp_request_CB(void)
 {

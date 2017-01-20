@@ -249,8 +249,8 @@ void mag_read_CB(void)
 
 void hmc5883l_request_async_update()
 {
-  static uint32_t last_update_us = 0;
-  uint32_t now = micros();
+  static uint64_t last_update_us = 0;
+  uint64_t now = micros();
 
   if(now - last_update_us > 6250)
   {

@@ -36,7 +36,7 @@ static uint8_t state = 0;
 static uint32_t last_update_time_us;
 static int32_t distance_cm;
 
-static void update_timed_task(uint32_t * usec, uint32_t period)
+static void update_timed_task(uint64_t * usec, uint64_t period)
 {
     *usec = micros() + period;
 }
@@ -45,7 +45,7 @@ static void update_timed_task(uint32_t * usec, uint32_t period)
 static bool check_and_update_timed_task(uint32_t * usec, uint32_t period)
 {
 
-    bool result = (int32_t)(micros() - *usec) >= 0;
+    bool result = (int64_t)(micros() - *usec) >= 0;
 
     if (result)
         update_timed_task(usec, period);
