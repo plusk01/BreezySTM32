@@ -24,50 +24,130 @@
 #define MS4525_ADDR   0x28
 #define STATUS_MASK   0x3F
 
+#define FILTERING4525_ADC_MIN        0.001   //
+#define FILTERING4525_ADC_MAX        0.01 //
+#define FILTERING4525_ADC_MIN_AT     10 // when abs(delta between ADC and current value) is less than MIN_AT , apply MIN
+#define FILTERING4525_ADC_MAX_AT     100 // when abs(delta between ADC and current value) is more than MAX_AT , apply MAX (interpolation in between)
 
-bool ms4525_detect(void)
+static float fastInvSqrt(float x);
+static float fabs(float x);
+
+uint32_t polling_interval_ms = 20; // (ms)
+uint32_t last_measurement_time_ms = 0;
+
+static int16_t raw_temp = 0;
+static int16_t raw_diff_pressure = 0;
+static int16_t diff_pressure_adc_0 = 0;
+static int16_t diff_pressure_smooth = 0;
+static float atmospheric_pressure = 101325.0; // For ground level, should use ms5611 to provide
+
+const float psi_to_Pa = 6894.757f;
+
+static bool calibrated = true;
+static volatile int32_t diff_pressure_offset = 0;
+
+void ms4525_start_calibration()
+{
+  calibrated = false;
+}
+
+static void calibrate()
+{
+  static uint16_t calibrate_count = 0;
+  static int32_t calibration_sum = 0;
+
+  calibrate_count++ ;
+  if (calibrate_count == 256 )
+  {
+    diff_pressure_offset =  (int32_t)(calibration_sum / 128); //there has been 128 reading (256-128)
+    calibrated = true;
+    calibration_sum = 0;
+    calibrate_count = 0;
+  }
+  else if  (calibrate_count >= 128  )
+  {
+    // Let the sensor settle for the first 128 measurements
+    calibration_sum += raw_diff_pressure ;
+  }
+}
+
+
+
+bool ms4525_init(void)
 {
   uint8_t buf[1];
   bool airspeed_present = false;
-  for(uint8_t i = 0; i < 10; i++)
+  for(uint8_t i = 0; i < 5; i++)
   {
     airspeed_present |= i2cRead(MS4525_ADDR, 0xFF, 1, buf);
-    delay(10);
+    delay(polling_interval_ms);
   }
+  calibrated = false;
   return airspeed_present;
 }
 
-void ms4525_init(void)
-{
-  ms4525_detect();
-}
 
-
-void ms4525_read(volatile int16_t* velocity, volatile int16_t* temp)
+void ms4525_update()
 {
-  int16_t data[2];
   uint8_t buf[4];
 
-  i2cRead(MS4525_ADDR, 0xFF, 4, buf);
+  uint32_t now_ms = millis();
+  if(now_ms > last_measurement_time_ms + polling_interval_ms)
+  {
+    last_measurement_time_ms = now_ms;
+    i2cRead(MS4525_ADDR, 0xFF, 4, buf);
 
-  uint8_t status = (buf[0] >> 5); // first two bits are status bits
-  if(status == 0x00) // good data packet
-  {
-    data[0] = (int16_t)(((STATUS_MASK | buf[0]) << 8) | buf[1]);
-    data[1] = (int16_t)((buf[2] << 3) | (buf[3] >> 5));
-  }
-  else if(status == 0x02) // stale data packet
-  {
-    data[0] = (int16_t)(((STATUS_MASK | buf[0]) << 8) | buf[1]);
-    data[1] = (int16_t)((buf[2] << 3) | (buf[3] >> 5));
+    uint8_t status = (buf[0] >> 5); // first two bits are status bits
+    if(status == 0x00) // good data packet
+    {
+      raw_temp = (buf[2] << 8) + buf[3];
+      raw_temp = (0xFFe0 & raw_temp) >> 5;
+
+      raw_diff_pressure =  ( ( (buf[0] << 8) + buf[1] ) & 0x3FFF) - 0x2000;
+
+      if(!calibrated)
+        calibrate();
+    }
+    else // stale data packet - ignore
+    {
+      return;
+    }
   }
   else
   {
     return;
   }
-  *velocity = data[0];
-  *temp = data[1];
-  return;
+}
+
+void ms4525_read(float *differential_pressure, float *temp, float* velocity)
+{
+  // First, calculate temperature
+  (*temp) = (0.097703957f * raw_temp)  + 223.0; // K
+
+
+  // Then, Calculate the differential pressure
+  diff_pressure_adc_0 = raw_diff_pressure - diff_pressure_offset ;
+  /// TODO: FILTER THE DIFF PRESSURE (USE LPF)
+  int abs_diff_pressure_adc =  abs(diff_pressure_adc_0 - diff_pressure_smooth);
+  float smoothing_scale = 0;
+  if (abs_diff_pressure_adc <= FILTERING4525_ADC_MIN_AT)
+  {
+    smoothing_scale = FILTERING4525_ADC_MIN ;
+  }
+  else if (abs_diff_pressure_adc >= FILTERING4525_ADC_MAX_AT)
+  {
+    smoothing_scale = FILTERING4525_ADC_MAX ;
+  }
+  else
+  {
+    smoothing_scale = FILTERING4525_ADC_MIN + ( FILTERING4525_ADC_MAX - FILTERING4525_ADC_MIN) * (abs_diff_pressure_adc - FILTERING4525_ADC_MIN_AT) / (FILTERING4525_ADC_MAX_AT - FILTERING4525_ADC_MIN_AT) ;
+  }
+  diff_pressure_smooth += smoothing_scale * ( diff_pressure_adc_0 - diff_pressure_smooth );
+  (*differential_pressure) = diff_pressure_smooth;
+
+  // Finally, calculate the airspeed
+  // in m/s, relies on accurate reading of atmospheric pressure, so we might want to use the barometer to supply good values for that
+  (*velocity) =  24.574 * 1.0/fastInvSqrt((fabs(diff_pressure_smooth) * (*temp)  /  atmospheric_pressure));
 }
 
 //=================================================
@@ -127,4 +207,27 @@ void ms4525_request_async_update(void)
     next_update_us = now_us + 1000; // Response time is 1 ms (1000 microseconds)
   }
   return;
+}
+
+
+static float fastInvSqrt(float x)
+{
+  long i;
+  float x2, y;
+  const float threehalfs = 1.5F;
+
+  x2 = x * 0.5F;
+  y  = x;
+  i  = * (long *) &y;                         // evil floating point bit level hacking
+  i  = 0x5f3759df - (i >> 1);
+  y  = * (float *) &i;
+  y  = y * (threehalfs - (x2 * y * y));       // 1st iteration
+  y  = y * (threehalfs - (x2 * y * y));       // 2nd iteration, this can be removed
+
+  return y;
+}
+
+static float fabs(float x)
+{
+  return (x < 0) ? -x : x;
 }

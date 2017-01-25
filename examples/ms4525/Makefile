@@ -19,7 +19,7 @@ PROJECT_SRC = ms4525.c
 TARGET		?= myproject
 
 # Compile-time options
-OPTIONS		?=
+OPTIONS		?= GDB
 
 # Debugger optons, must be empty or GDB
 DEBUG ?=
@@ -84,8 +84,8 @@ ifeq ($(DEBUG),GDB)
 OPTIMIZE	 = -Og
 
 else
-OPTIMIZE	 = -Os
-LTO_FLAGS	 = -flto -fuse-linker-plugin $(OPTIMIZE)
+#OPTIMIZE	 = -Os
+#LTO_FLAGS	 = -flto -fuse-linker-plugin $(OPTIMIZE)
 endif
 
 DEBUG_FLAGS	 = -ggdb3

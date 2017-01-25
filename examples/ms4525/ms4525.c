@@ -22,18 +22,16 @@
 #include <breezystm32.h>
 
 bool airspeed_present = false;
-volatile int16_t velocity;
-volatile int16_t temp;
 
 void setup(void)
 {
     delay(500);
     i2cInit(I2CDEV_2);
 
-    airspeed_present = ms4525_detect();
+    airspeed_present = ms4525_init();
 
     if(airspeed_present)
-        ms4525_request_async_update();
+        ms4525_update();
 }
 
 
@@ -42,9 +40,13 @@ void loop(void)
 {
     if (airspeed_present)
     {
-        ms4525_request_async_update();
-        printf("Velocity: %d ", ms4525_read_velocity());
-        printf("\tTemperature: %d\n", ms4525_read_temperature());
+        ms4525_update();
+        float velocity, diff_pressure, temp;
+        ms4525_read(&diff_pressure, &temp, &velocity);
+        printf("vel: %d.%d m/s\tdiff_press: %dPa\ttemp:%d.%dK\n",
+               (int32_t)velocity, (int32_t)(velocity*1000)%1000,
+               (int32_t)diff_pressure,
+               (int32_t)temp, (int32_t)(temp*1000)%1000);
     }
     else
     {

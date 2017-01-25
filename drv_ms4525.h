@@ -19,11 +19,12 @@
 
 #pragma once
 
-bool ms4525_detect(void);
-void ms4525_init(void);
+bool ms4525_init(void);
 
 // Blocking I2C function
-void ms4525_read(volatile int16_t* velocity, volatile int16_t* temp);
+void ms4525_update();
+void ms4525_read(float *differential_pressure, float *temp, float* velocity);
+void ms4525_start_calibration();
 
 // Asynchronous I2C function
 void ms4525_request_async_update(void);
