@@ -2,3 +2,9 @@
 examples/*/obj
 examples/*/*.o
 *.o
+
+*.config
+*.creator
+*.files
+*.user
+*.includes
