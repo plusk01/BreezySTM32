@@ -23,5 +23,5 @@
 
 bool mb1242_init();
 
-// This is a non-blocking function call
-int32_t mb1242_poll();
+void mb1242_update();
+float mb1242_read();

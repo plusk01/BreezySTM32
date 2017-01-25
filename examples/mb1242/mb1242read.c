@@ -35,7 +35,11 @@ void setup(void)
 void loop(void)
 {
   if(sonar_present)
-        printf("%d\n", mb1242_poll());
+  {
+        mb1242_update();
+        float distance = mb1242_read();
+        printf("distance = %d.%dm\n", (uint32_t)distance, (uint32_t)(mb1242_read()*1000));
+  }
   else
         printf("no sonar\n");
   delay(100);
