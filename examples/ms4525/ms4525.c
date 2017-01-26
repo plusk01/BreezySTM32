@@ -43,10 +43,12 @@ void loop(void)
         ms4525_update();
         float velocity, diff_pressure, temp;
         ms4525_read(&diff_pressure, &temp, &velocity);
-        printf("vel: %d.%d m/s\tdiff_press: %dPa\ttemp:%d.%dK\n",
+        printf("calibrated = %d\tvel: %d.%d m/s\tdiff_press: %dPa\ttemp:%d.%dK\n",
+               ms4525_calibrated(),
                (int32_t)velocity, (int32_t)(velocity*1000)%1000,
                (int32_t)diff_pressure,
                (int32_t)temp, (int32_t)(temp*1000)%1000);
+        delay(10);
     }
     else
     {

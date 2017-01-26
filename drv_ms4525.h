@@ -25,6 +25,7 @@ bool ms4525_init(void);
 void ms4525_update();
 void ms4525_read(float *differential_pressure, float *temp, float* velocity);
 void ms4525_start_calibration();
+bool ms4525_calibrated();
 
 // Asynchronous I2C function
 void ms4525_request_async_update(void);

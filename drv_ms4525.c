@@ -30,7 +30,7 @@
 #define FILTERING4525_ADC_MAX_AT     100 // when abs(delta between ADC and current value) is more than MAX_AT , apply MAX (interpolation in between)
 
 static float fastInvSqrt(float x);
-static float fabs(float x);
+inline static float absf(float x);
 
 uint32_t polling_interval_ms = 20; // (ms)
 uint32_t last_measurement_time_ms = 0;
@@ -69,6 +69,11 @@ static void calibrate()
     // Let the sensor settle for the first 128 measurements
     calibration_sum += raw_diff_pressure ;
   }
+}
+
+bool ms4525_calibrated()
+{
+  return calibrated;
 }
 
 
@@ -147,7 +152,7 @@ void ms4525_read(float *differential_pressure, float *temp, float* velocity)
 
   // Finally, calculate the airspeed
   // in m/s, relies on accurate reading of atmospheric pressure, so we might want to use the barometer to supply good values for that
-  (*velocity) =  24.574 * 1.0/fastInvSqrt((fabs(diff_pressure_smooth) * (*temp)  /  atmospheric_pressure));
+  (*velocity) =  24.574 * 1.0/fastInvSqrt((absf(diff_pressure_smooth) * (*temp)  /  atmospheric_pressure));
 }
 
 //=================================================
@@ -227,7 +232,7 @@ static float fastInvSqrt(float x)
   return y;
 }
 
-static float fabs(float x)
+inline static float absf(float x)
 {
   return (x < 0) ? -x : x;
 }
