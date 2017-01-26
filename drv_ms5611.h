@@ -25,10 +25,4 @@ bool ms5611_init(void);
 
 // blocking I2C update function
 void ms5611_update(void);
-
-// asynchronous I2C update function
-void ms5611_request_async_update(void);
-
-// Data access methods
-uint32_t ms5611_read_pressure(void);
-uint32_t ms5611_read_temperature(void);
+void ms5611_read(float* altitude, float* pressure, float* temperature);
