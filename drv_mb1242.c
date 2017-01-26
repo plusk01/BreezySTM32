@@ -80,7 +80,7 @@ void read_sonar_measurement_CB(void)
 void mb1242_update()
 {
     uint64_t now_us = micros();
-    if (now_us > last_update_time_us + 10000)
+    if (now_us > last_update_time_us + 25000)
     {
       last_update_time_us = now_us;
         if (state == 0)
