@@ -55,8 +55,7 @@ uint64_t micros(void)
         ms = sysTickUptime;
         cycle_cnt = SysTick->VAL;
     } while (ms != sysTickUptime);
-  uint64_t out = (uint64_t)ms * (uint64_t)1000 + (uint64_t)((usTicks * 1000 - cycle_cnt) / usTicks);
-  return out;
+  return (uint64_t)ms * (uint64_t)1000 + (uint64_t)((usTicks * 1000 - cycle_cnt) / usTicks);
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
@@ -127,7 +126,7 @@ void systemInit(void)
 void delayMicroseconds(uint32_t us)
 {
     uint64_t now = micros();
-    while (micros() - now < us);
+    while(micros() < (now + us));
 }
 
 void delay(uint32_t ms)

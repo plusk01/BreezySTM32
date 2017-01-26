@@ -29,7 +29,7 @@ void setup(void)
 {
     i2cInit(I2CDEV_2);
     delay(500);
-    sonar_present = mb1242_init(); // Use default address
+    sonar_present = mb1242_init();
 }
 
 void loop(void)

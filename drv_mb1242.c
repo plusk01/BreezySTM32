@@ -36,23 +36,6 @@ static uint8_t state = 0;
 static uint64_t last_update_time_us;
 static int32_t distance_cm;
 
-static void update_timed_task(uint64_t * usec, uint64_t period)
-{
-    *usec = micros() + period;
-}
-
-
-static bool check_and_update_timed_task(uint64_t * usec, uint32_t period)
-{
-
-    bool result = (int64_t)(micros() - *usec) >= 0;
-
-    if (result)
-        update_timed_task(usec, period);
-
-    return result;
-}
-
 
 static void adjust_reading(void) {
 
@@ -96,8 +79,10 @@ void read_sonar_measurement_CB(void)
 
 void mb1242_update()
 {
-    if (check_and_update_timed_task(&last_update_time_us, 10000))
+    uint64_t now_us = micros();
+    if (now_us > last_update_time_us + 10000)
     {
+      last_update_time_us = now_us;
         if (state == 0)
         {
             // Start a sonar measurement,
@@ -115,7 +100,6 @@ void mb1242_update()
             state = 0;
         }
     }
-    return distance_cm;
 }
 
 float mb1242_read()
