@@ -84,7 +84,7 @@ enum accel_fsr_e {
 
 
 // Lowpass
-static uint8_t mpuLowPassFilter = INV_FILTER_42HZ;
+static uint8_t mpuLowPassFilter = INV_FILTER_20HZ;
 
 // MPU6xxx registers
 #define MPU_RA_SMPLRT_DIV       0x19
