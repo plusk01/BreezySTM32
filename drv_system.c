@@ -135,7 +135,7 @@ void delay(uint32_t ms)
         delayMicroseconds(1000);
 }
 
-void failureMode(uint8_t mode)
+void failureMode()
 {
     LED1_OFF;
     LED0_ON;

@@ -77,7 +77,7 @@ uint32_t rccReadBkpDr(void);
 void rccWriteBkpDr(uint32_t value);
 
 // failure
-void failureMode(uint8_t mode);
+void failureMode();
 
 // bootloader/IAP
 void systemReset(bool toBootloader);
