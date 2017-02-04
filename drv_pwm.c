@@ -44,6 +44,7 @@
 #include "drv_gpio.h"
 #include "drv_timer.h"
 #include "drv_pwm.h"
+#include "drv_system.h"
 
 typedef struct {
     volatile uint16_t *ccr;
@@ -58,6 +59,8 @@ typedef struct {
     uint16_t fall;
     uint16_t capture;
 } pwmPortData_t;
+
+static uint8_t sonar_trigger_port;
 
 typedef void (*pwmWriteFuncPtr)(uint8_t index, uint16_t value);  // function pointer used to write motors
 
@@ -238,6 +241,19 @@ static void sonarCallback(uint8_t port, uint16_t capture)
   }
 }
 
+static void configureSonar(uint8_t port)
+{
+  // Initialize as a trigger for sonar ring
+  sonar_trigger_port = port;
+
+  gpio_config_t sonar_trigger_config;
+  sonar_trigger_config.mode = Mode_Out_PP;
+  sonar_trigger_config.pin = timerHardware[port].pin;
+  sonar_trigger_config.speed = Speed_50MHz;
+
+  gpioInit(timerHardware[sonar_trigger_port].gpio, &sonar_trigger_config);
+}
+
 // ===========================================================================
 
 enum {
@@ -247,7 +263,12 @@ enum {
     TYPE_S = 0x80,
 };
 
-static const uint8_t multiPPM[] = {
+enum {
+    TYPE_PWM_IN_OUT = 0x000,
+    TYPE_GPIO_OUTPUT = 0x100,
+};
+
+static const uint16_t multiPPM[] = {
     PWM1 | TYPE_IP,     // PPM input
     PWM9 | TYPE_M,      // Swap to servo if needed
     PWM10 | TYPE_M,     // Swap to servo if needed
@@ -259,27 +280,30 @@ static const uint8_t multiPPM[] = {
     PWM6 | TYPE_M,      // Swap to servo if needed
     PWM7 | TYPE_M,      // Swap to servo if needed
     PWM8 | TYPE_M,      // Swap to servo if needed
-    0xFF
+    0xFFF
 };
 
-static const uint8_t multiPPMSONAR[] = {
+static const uint16_t multiPPMSONAR[] = {
     PWM1 | TYPE_IP,     // PPM input
     PWM2 | TYPE_S,      // Read Sonar Input
+    PWM3 | TYPE_S,
+    PWM4 | TYPE_S,
+    PWM5 | TYPE_S,
+    PWM6 | TYPE_S,
+    PWM7 | TYPE_S,
+    PWM8 | TYPE_S,
 
     PWM9 | TYPE_M,
     PWM10 | TYPE_M,
     PWM11 | TYPE_M,
     PWM12 | TYPE_M,
-    PWM13 | TYPE_M,
+    TYPE_GPIO_OUTPUT | PWM13 | TYPE_S,
     PWM14 | TYPE_M,
-    PWM5 | TYPE_M,      // Swap to servo if needed
-    PWM6 | TYPE_M,      // Swap to servo if needed
-    PWM7 | TYPE_M,      // Swap to servo if needed
-    PWM8 | TYPE_M,      // Swap to servo if needed
-    0xFF
+
+    0xFFF
 };
 
-static const uint8_t multiPWM[] = {
+static const uint16_t multiPWM[] = {
     PWM1 | TYPE_IW,     // input #1
     PWM2 | TYPE_IW,
     PWM3 | TYPE_IW,
@@ -294,7 +318,7 @@ static const uint8_t multiPWM[] = {
     PWM12 | TYPE_M,
     PWM13 | TYPE_M,
     PWM14 | TYPE_M,     // motor #4 or #6
-    0xFF
+    0xFFF
 };
 
 
@@ -314,7 +338,7 @@ static void pwmWriteStandard(uint8_t index, uint16_t value)
 
 void pwmInit(bool useCPPM, bool usePwmFilter, bool fastPWM, uint32_t motorPwmRate, uint16_t idlePulseUsec)
 {
-    const uint8_t *setup;
+    const uint16_t *setup;
 
     // pwm filtering on input
     pwmFilter = usePwmFilter ? 1 : 0;
@@ -326,9 +350,14 @@ void pwmInit(bool useCPPM, bool usePwmFilter, bool fastPWM, uint32_t motorPwmRat
 
         uint8_t port = setup[i] & 0x0F;
         uint8_t mask = setup[i] & 0xF0;
+        uint16_t output = setup[i] &0x0F00;
 
-        if (setup[i] == 0xFF) // terminator
+        if (setup[i] == 0x0FFF) // terminator
             break;
+
+        if(output & TYPE_GPIO_OUTPUT){
+          configureSonar(port);
+        }
 
         if (mask & TYPE_IP) {
             pwmInConfig(port, ppmCallback, 0);
@@ -340,7 +369,6 @@ void pwmInit(bool useCPPM, bool usePwmFilter, bool fastPWM, uint32_t motorPwmRat
           pwmInConfig(port, sonarCallback, numInputs);
           numInputs++;
         } else if (mask & TYPE_M) {
-
             uint32_t mhz = (motorPwmRate > 500 || fastPWM) ? PWM_TIMER_8_MHZ : PWM_TIMER_MHZ;
             uint32_t hz = mhz * 1000000;
 
@@ -366,6 +394,13 @@ void pwmWriteMotor(uint8_t index, uint16_t value)
 uint16_t pwmRead(uint8_t channel)
 {
     return captures[channel];
+}
+
+void startSonar()
+{
+  digitalHi(timerHardware[sonar_trigger_port].gpio, timerHardware[sonar_trigger_port].pin);
+  delayMicroseconds(50);
+  digitalLo(timerHardware[sonar_trigger_port].gpio, timerHardware[sonar_trigger_port].pin);
 }
 
 float sonarRead(uint8_t channel)
