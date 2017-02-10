@@ -204,21 +204,21 @@ static void ms5611_get_up(void)
 
 static void ms5611_calibrate()
 {
-  //  static uint16_t calibration_counter = 0;
-  //  static float calibration_sum = 0.0f;
+    static uint16_t calibration_counter = 0;
+    static float calibration_sum = 0.0f;
 
-  //  calibration_counter++;
-  //  if(calibration_counter == 256)
-  //  {
-  //    offset = calibration_sum / 128.0;
-  //    calibration_counter = 0;
-  //    calibration_sum = 0.0f;
-  //    calibrated = true;
-  //  }
-  //  else if(calibration_counter > 128)
-  //  {
-  //    calibration_sum += altitude;
-  //  }
+    calibration_counter++;
+    if(calibration_counter == 256)
+    {
+      offset = calibration_sum / 128.0;
+      calibration_counter = 0;
+      calibration_sum = 0.0f;
+      calibrated = true;
+    }
+    else if(calibration_counter > 128)
+    {
+      calibration_sum += altitude;
+    }
 }
 
 static void ms5611_calculate()

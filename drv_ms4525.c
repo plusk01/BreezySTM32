@@ -82,11 +82,7 @@ bool ms4525_init(void)
 {
   uint8_t buf[1];
   bool airspeed_present = false;
-  for(uint8_t i = 0; i < 5; i++)
-  {
-    airspeed_present |= i2cRead(MS4525_ADDR, 0xFF, 1, buf);
-    delay(polling_interval_ms);
-  }
+  airspeed_present |= i2cRead(MS4525_ADDR, 0xFF, 1, buf);
   calibrated = false;
   return airspeed_present;
 }
