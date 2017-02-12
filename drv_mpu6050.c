@@ -184,38 +184,6 @@ void mpu6050_init(bool enableInterrupt, uint16_t * acc1G, float * gyroScale, int
     // Set acc1G. Modified once by mpu6050CheckRevision for old (hopefully nonexistent outside of clones) parts
     *acc1G = 512 * 8;
 
-    uint8_t rev;
-    uint8_t tmp[6];
-    int half = 0;
-
-    // determine product ID and accel revision
-    mpuReadRegisterI2C(MPU_RA_XA_OFFS_H, tmp, 6);
-    rev = ((tmp[5] & 0x01) << 2) | ((tmp[3] & 0x01) << 1) | (tmp[1] & 0x01);
-    if (rev) {
-        // Congrats, these parts are better
-        if (rev == 1) {
-            half = 1;
-        } else if (rev == 2) {
-            half = 0;
-        } else {
-            failureMode(5);
-        }
-    } else {
-        mpuReadRegisterI2C(MPU_RA_PRODUCT_ID, &rev, 1);
-        rev &= 0x0F;
-        if (!rev) {
-            failureMode(5);
-        } else if (rev == 4) {
-            half = 1;
-        } else {
-            half = 0;
-        }
-    }
-
-    // All this just to set the value
-    if (half)
-        *acc1G = 256 * 8;
-
     // 16.4 dps/lsb scalefactor for all Invensense devices
     *gyroScale = (1.0f / 16.4f) * (M_PI / 180.0f);
 
@@ -234,12 +202,11 @@ void mpu6050_init(bool enableInterrupt, uint16_t * acc1G, float * gyroScale, int
 
     // Device reset
     mpuWriteRegisterI2C(MPU_RA_PWR_MGMT_1, 0x80); // Device reset
-    delay(100);
+    delay(30); // wait for reboot
 
     // Gyro config
     mpuWriteRegisterI2C(MPU_RA_SMPLRT_DIV, 0x00); // Sample Rate = Gyroscope Output Rate / (1 + SMPLRT_DIV)
     mpuWriteRegisterI2C(MPU_RA_PWR_MGMT_1, MPU6050_INV_CLK_GYROZ); // Clock source = 3 (PLL with Z Gyro reference)
-    delay(10);
     mpuWriteRegisterI2C(MPU_RA_CONFIG, mpuLowPassFilter); // set DLPF
     mpuWriteRegisterI2C(MPU_RA_GYRO_CONFIG, INV_FSR_2000DPS << 3); // full-scale 2kdps gyro range
 

@@ -121,6 +121,9 @@ void systemInit(void)
 
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
+
+
+    sysTickUptime = (uint32_t)((2 << 32) / 1e6) - 1000;
 }
 
 void delayMicroseconds(uint32_t us)
