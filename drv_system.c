@@ -55,7 +55,7 @@ uint64_t micros(void)
         ms = sysTickUptime;
         cycle_cnt = SysTick->VAL;
     } while (ms != sysTickUptime);
-  return (uint64_t)ms * (uint64_t)1000 + (uint64_t)((usTicks * 1000 - cycle_cnt) / usTicks);
+    return (uint64_t)ms * (uint64_t)1000 + (uint64_t)((usTicks * 1000 - cycle_cnt) / usTicks);
 }
 
 // Return system uptime in milliseconds (rollover in 49 days)
@@ -121,9 +121,6 @@ void systemInit(void)
 
     // SysTick
     SysTick_Config(SystemCoreClock / 1000);
-
-
-    sysTickUptime = (uint32_t)((2 << 32) / 1e6) - 1000;
 }
 
 void delayMicroseconds(uint32_t us)
