@@ -211,6 +211,9 @@ void ms4525_request_async_update(void)
 }
 
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
+
 static float fastInvSqrt(float x)
 {
   long i;
@@ -227,6 +230,9 @@ static float fastInvSqrt(float x)
 
   return y;
 }
+
+#pragma GCC diagnostic pop
+
 
 inline static float absf(float x)
 {
