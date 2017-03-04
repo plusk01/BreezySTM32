@@ -202,7 +202,7 @@ static void ms5611_get_up(void)
   ms5611_up = ms5611_read_adc();
 }
 
-static void ms5611_calibrate()
+static void ms5611_calibrate(float pre_adjust_altitude)
 {
     static uint16_t calibration_counter = 0;
     static float calibration_sum = 0.0f;
@@ -210,14 +210,14 @@ static void ms5611_calibrate()
     calibration_counter++;
     if(calibration_counter == 256)
     {
-      offset = calibration_sum / 128.0;
+      offset = calibration_sum / 127.0;
       calibration_counter = 0;
       calibration_sum = 0.0f;
       calibrated = true;
     }
     else if(calibration_counter > 128)
     {
-      calibration_sum += altitude;
+      calibration_sum += pre_adjust_altitude;
     }
 }
 
@@ -251,16 +251,22 @@ static void ms5611_calculate()
     pressure = (float)press; // Pa
     temperature = (float)temp/ 100.0 + 273.0; // K
 
-    altitude = fast_alt(pressure) - offset;
+    float pre_adjust_altitude = fast_alt(pressure);
 
-    if(!calibrated && altitude)
-      ms5611_calibrate();
+    if(!calibrated && pressure)
+      ms5611_calibrate(pre_adjust_altitude);
+
+    altitude = fast_alt(pressure) - offset;
   }
 }
 
 
 // =======================================================================================
 
+void ms5611_start_calibration(void)
+{
+  calibrated = false;
+}
 
 bool ms5611_init(void)
 {

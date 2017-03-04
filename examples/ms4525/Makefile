@@ -46,6 +46,7 @@ myproject_SRC = $(BREEZY_DIR)/main.c \
 		   $(BREEZY_DIR)/printf.c \
            $(BREEZY_DIR)/drv_mpu6050.c \
            $(BREEZY_DIR)/drv_ms4525.c \
+                   $(BREEZY_DIR)/drv_ms5611.c \
 		   $(PROJECT_SRC) \
 		   $(CMSIS_SRC) \
 		   $(STDPERIPH_SRC)

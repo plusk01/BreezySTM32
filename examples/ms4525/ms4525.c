@@ -22,6 +22,7 @@
 #include <breezystm32.h>
 
 bool airspeed_present = false;
+bool barometer_present = false;
 
 void setup(void)
 {
@@ -30,14 +31,27 @@ void setup(void)
 
     airspeed_present = ms4525_init();
 
+    barometer_present = ms5611_init();
+
     if(airspeed_present)
         ms4525_update();
+
+    if(barometer_present)
+        ms5611_update();
 }
 
 
 
+float pressure, altitude, temperature;
 void loop(void)
 {
+
+    if (barometer_present)
+    {
+      ms5611_update();
+      ms5611_read(&altitude, &pressure, &temperature);
+      ms4525_set_atm((uint32_t) pressure);
+    }
     if (airspeed_present)
     {
         ms4525_update();
@@ -48,11 +62,13 @@ void loop(void)
                (int32_t)velocity, (int32_t)(velocity*1000)%1000,
                (int32_t)diff_pressure,
                (int32_t)temp, (int32_t)(temp*1000)%1000);
-        delay(10);
     }
     else
     {
         printf("no airspeed\n");
+        airspeed_present = ms4525_init();
+
     }
+    delay(10);
 }
 

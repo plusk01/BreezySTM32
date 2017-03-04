@@ -22,6 +22,7 @@
 #pragma once
 
 bool ms5611_init(void);
+void ms5611_start_calibration(void);
 
 // blocking I2C update function
 void ms5611_update(void);

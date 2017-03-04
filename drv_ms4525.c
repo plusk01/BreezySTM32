@@ -46,6 +46,11 @@ const float psi_to_Pa = 6894.757f;
 static bool calibrated = true;
 static volatile int32_t diff_pressure_offset = 0;
 
+static inline int sign(float x)
+{
+  return (x > 0) - (x < 0);
+}
+
 void ms4525_start_calibration()
 {
   calibrated = false;
@@ -144,11 +149,16 @@ void ms4525_read(float *differential_pressure, float *temp, float* velocity)
     smoothing_scale = FILTERING4525_ADC_MIN + ( FILTERING4525_ADC_MAX - FILTERING4525_ADC_MIN) * (abs_diff_pressure_adc - FILTERING4525_ADC_MIN_AT) / (FILTERING4525_ADC_MAX_AT - FILTERING4525_ADC_MIN_AT) ;
   }
   diff_pressure_smooth += smoothing_scale * ( diff_pressure_adc_0 - diff_pressure_smooth );
-  (*differential_pressure) = diff_pressure_smooth;
+  (*differential_pressure) = -diff_pressure_smooth;
 
   // Finally, calculate the airspeed
   // in m/s, relies on accurate reading of atmospheric pressure, so we might want to use the barometer to supply good values for that
-  (*velocity) =  24.574 * 1.0/fastInvSqrt((absf(diff_pressure_smooth) * (*temp)  /  atmospheric_pressure));
+  (*velocity) =  sign(diff_pressure_smooth) * 24.574 * -1.0/fastInvSqrt((absf(diff_pressure_smooth) * (*temp)  /  atmospheric_pressure));
+}
+
+void ms4525_set_atm(uint32_t pressure_Pa)
+{
+  atmospheric_pressure = pressure_Pa;
 }
 
 //=================================================
@@ -210,6 +220,8 @@ void ms4525_request_async_update(void)
   return;
 }
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wstrict-aliasing"
 
 static float fastInvSqrt(float x)
 {
@@ -227,6 +239,8 @@ static float fastInvSqrt(float x)
 
   return y;
 }
+
+#pragma GCC diagnostic pop
 
 inline static float absf(float x)
 {
