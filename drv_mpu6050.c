@@ -24,6 +24,10 @@
 
 #include <math.h>
 
+#ifndef M_PI
+#define M_PI 3.14159
+#endif
+
 /* Generic driver for invensense gyro/acc devices.
  *
  * Supported hardware:
