@@ -56,15 +56,6 @@ void start_sonar_measurement_CB(void)
 }
 
 
-void read_sonar_measurement_CB(void)
-{
-  // switch data into appropriate units
-  distance_cm = (read_buffer[0] << 8) + read_buffer[1];
-  adjust_reading();
-  state = 0;
-}
-
-
 void mb1242_update()
 {
   uint64_t now_us = micros();
@@ -85,6 +76,10 @@ void mb1242_update()
 
       // convert to cm
       distance_cm = (read_buffer[0] << 8) + read_buffer[1];
+      if (distance_cm > 850)
+      {
+          distance_cm = 0;
+      }
       state = 0;
     }
   }
