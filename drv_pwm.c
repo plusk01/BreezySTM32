@@ -44,6 +44,7 @@
 #include "drv_gpio.h"
 #include "drv_timer.h"
 #include "drv_pwm.h"
+#include "drv_system.h"
 
 typedef struct {
     volatile uint16_t *ccr;
@@ -65,6 +66,7 @@ static pwmPortData_t   pwmPorts[MAX_PORTS];
 static uint16_t        captures[MAX_INPUTS];
 static pwmWriteFuncPtr pwmWritePtr = NULL;
 static uint8_t         pwmFilter = 0;
+static uint32_t        pwmLastUpdateTime_ms = 0;
 
 #define PWM_TIMER_MHZ 1
 #define PWM_TIMER_8_MHZ 8
@@ -176,8 +178,14 @@ static pwmPortData_t *pwmInConfig(uint8_t port, timerCCCallbackPtr callback, uin
     return p;
 }
 
+uint32_t pwmLastUpdate()
+{
+    return pwmLastUpdateTime_ms;
+}
+
 static void ppmCallback(uint8_t port, uint16_t capture)
 {
+    pwmLastUpdateTime_ms = millis();
     (void)port;
     uint16_t diff;
     static uint16_t now;
@@ -200,6 +208,7 @@ static void ppmCallback(uint8_t port, uint16_t capture)
 
 static void pwmCallback(uint8_t port, uint16_t capture)
 {
+    pwmLastUpdateTime_ms = millis();
     if (pwmPorts[port].state == 0) {
         pwmPorts[port].rise = capture;
         pwmPorts[port].state = 1;
