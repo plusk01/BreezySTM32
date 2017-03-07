@@ -37,12 +37,6 @@ static uint64_t last_update_time_us;
 static int32_t distance_cm;
 
 
-static void adjust_reading(void) {
-
-  distance_cm = 1.071 * distance_cm + 3.103; // emprically determined
-}
-
-
 bool mb1242_init()
 {
   return i2cWrite(MB1242_DEFAULT_ADDRESS, 0xFF, start_measurement_command);
