@@ -269,7 +269,7 @@ static const uint8_t multiPWM[] = {
 };
 
 
-static         pwmPortData_t *motors[4];
+static pwmPortData_t *motors[MAX_PORTS];
 static uint8_t numMotors = 0;
 static uint8_t numInputs = 0;
 
@@ -289,6 +289,8 @@ void pwmInit(bool useCPPM, bool usePwmFilter, bool fastPWM, uint32_t motorPwmRat
 
     // pwm filtering on input
     pwmFilter = usePwmFilter ? 1 : 0;
+
+    numMotors = 0;
 
     setup = useCPPM ? multiPPM : multiPWM;
 
