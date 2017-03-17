@@ -17,10 +17,10 @@
 
 #pragma once
 
-#include "common/axis.h"
-#include "drivers/exti.h"
-#include "drivers/sensor.h"
-#include "drivers/accgyro_mpu.h"
+#include "axis.h"
+#include "exti.h"
+#include "sensor.h"
+#include "accgyro_mpu.h"
 
 #ifndef MPU_I2C_INSTANCE
 #define MPU_I2C_INSTANCE I2C_DEVICE

@@ -17,19 +17,26 @@
 
 #pragma once
 
-#include "io_types.h"
+typedef enum {
+    X = 0,
+    Y,
+    Z
+} axis_e;
 
-typedef enum softSPIDevice {
-    SOFT_SPIDEV_1   = 0
-} softSPIDevice_e;
+#define XYZ_AXIS_COUNT 3
 
-typedef struct softSPIDevice_s {
-    ioTag_t sckTag;
-    ioTag_t mosiTag;
-    ioTag_t misoTag;
-    ioTag_t nssTag;
-} softSPIDevice_t;
+// See http://en.wikipedia.org/wiki/Flight_dynamics
+typedef enum {
+    FD_ROLL = 0,
+    FD_PITCH,
+    FD_YAW
+} flight_dynamics_index_t;
 
+#define FLIGHT_DYNAMICS_INDEX_COUNT 3
 
-void softSpiInit(const softSPIDevice_t *dev);
-uint8_t softSpiTransferByte(const softSPIDevice_t *dev, uint8_t data);
+typedef enum {
+    AI_ROLL = 0,
+    AI_PITCH
+} angle_index_t;
+
+#define ANGLE_INDEX_COUNT 2

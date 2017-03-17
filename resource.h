@@ -13,6 +13,15 @@ typedef enum {
     OWNER_SOFTSERIAL_TX,
     OWNER_SOFTSERIAL_RXTX,        // bidirectional pin for softserial
     OWNER_SOFTSERIAL_AUXTIMER,    // timer channel is used for softserial. No IO function on pin
+
+    OWNER_SPI_SCK,
+    OWNER_SPI_MISO,
+    OWNER_SPI_MOSI,
+    OWNER_SPI_CS,
+    
+    OWNER_I2C_SCL,
+    OWNER_I2C_SDA,
+    
     OWNER_ADC,
     OWNER_SERIAL_RX,
     OWNER_SERIAL_TX,
@@ -36,3 +45,5 @@ typedef enum {
     RESOURCE_ADC = 1 << 5,
     RESOURCE_EXTI = 1 << 6
 } resourceType_t;
+
+#define RESOURCE_INDEX(x) (x + 1)
