@@ -3,8 +3,7 @@
 **
 **  File        : stm32_flash.ld
 **
-**  Abstract    : Linker script for STM32F103CB Device with
-**                128KByte FLASH, 20KByte RAM
+**  Abstract    : Common linker script for STM32 devices.
 **
 *****************************************************************************
 */
@@ -13,19 +12,16 @@
 ENTRY(Reset_Handler)
 
 /* Highest address of the user mode stack */
-_estack = 0x20005000;    /* end of 20K RAM */
+_estack = ORIGIN(RAM) + LENGTH(RAM);    /* end of RAM */
+
+/* Base address where the config is stored. */
+__config_start = ORIGIN(FLASH) + LENGTH(FLASH);
+
+__config_end = ORIGIN(FLASH_CONFIG) + LENGTH(FLASH_CONFIG);
 
 /* Generate a link error if heap and stack don't fit into RAM */
 _Min_Heap_Size = 0;      /* required amount of heap  */
 _Min_Stack_Size = 0x400; /* required amount of stack */
-
-/* Specify the memory areas. Flash is limited for last 2K for configuration storage */
-MEMORY
-{
-  FLASH (rx)      : ORIGIN = 0x08000000, LENGTH = 126K
-  RAM (xrw)       : ORIGIN = 0x20000000, LENGTH = 20K
-  MEMORY_B1 (rx)  : ORIGIN = 0x60000000, LENGTH = 0K
-}
 
 /* Define output sections */
 SECTIONS
@@ -34,6 +30,7 @@ SECTIONS
   .isr_vector :
   {
     . = ALIGN(4);
+    PROVIDE (isr_vector_table_base = .);
     KEEP(*(.isr_vector)) /* Startup code */
     . = ALIGN(4);
   } >FLASH
@@ -85,12 +82,25 @@ SECTIONS
     KEEP (*(SORT(.fini_array.*)))
     PROVIDE_HIDDEN (__fini_array_end = .);
   } >FLASH
+  .pg_registry :
+  {
+    PROVIDE_HIDDEN (__pg_registry_start = .);
+    KEEP (*(.pg_registry))
+    KEEP (*(SORT(.pg_registry.*)))
+    PROVIDE_HIDDEN (__pg_registry_end = .);
+  } >FLASH
+  .pg_resetdata :
+  {
+    PROVIDE_HIDDEN (__pg_resetdata_start = .);
+    KEEP (*(.pg_resetdata))
+    PROVIDE_HIDDEN (__pg_resetdata_end = .);
+  } >FLASH
 
   /* used by the startup to initialize data */
   _sidata = .;
 
   /* Initialized data sections goes into RAM, load LMA copy after code */
-  .data : 
+  .data :
   {
     . = ALIGN(4);
     _sdata = .;        /* create a global symbol at data start */
@@ -109,7 +119,7 @@ SECTIONS
     _sbss = .;         /* define a global symbol at bss start */
     __bss_start__ = _sbss;
     *(.bss)
-    *(.bss*)
+    *(SORT_BY_ALIGNMENT(.bss*))
     *(COMMON)
 
     . = ALIGN(4);
